@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Water level monitoring and valve control system for Saphale locations">
+    <title>Saphale Water Management System</title>
+    <link rel="icon" href="IIT_Madras_Logo.ico" type="image/x-icon">
+    <link rel="manifest" href="/Saphale_water_Management/manifest.json">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            margin: 20px;
+        }
+        h1 {
+            color: #007bff;
+            margin-top: 30px;
+            margin-bottom: 30px;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .location-card {
+            width: 250px;
+            height: 180px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            padding: 20px;
+            transition: transform 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-decoration: none;
+            color: #333;
+        }
+        .location-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.3);
+        }        .location-icon {
+            margin-bottom: 15px;
+            color: #007bff;
+        }
+        .water-tank-img {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+        }
+        .location-name {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+        }        .header {
+            background-color: #007bff;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .header h1 {
+            font-size: 32px;
+            margin-top: 10px;
+            margin-bottom: 5px;
+            color: white;
+        }
+        .header h2 {
+            font-size: 20px;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            color: rgba(255, 255, 255, 0.9);
+        }        .footer {
+            margin-top: 50px;
+            color: #777;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body> 
+
+
+    
+    <div class="header">
+        <img src="IIT_Madras_Logo.png" alt="IIT Madras Logo" width="250">
+        <h1>Saphale Water Management System</h1>
+        <h2>Water Level Monitoring and Valve Control</h2>
+        <p>Select a location to monitor water levels and control actuators</p>
+    </div>    <div class="container">        <a href="mbr.html" class="location-card">
+            <div class="location-icon">
+                <img src="water-tank_16881111.png" alt="Water Tank" class="water-tank-img">
+            </div>
+            <div class="location-name">MBR</div>
+        </a>
+          <a href="kurlai_mandir.html" class="location-card">
+            <div class="location-icon">
+                <img src="water-tank_16881111.png" alt="Water Tank" class="water-tank-img">
+            </div>
+            <div class="location-name">Kurlai Mandir</div>
+        </a>          <a href="makne.html" class="location-card">
+            <div class="location-icon">
+                <img src="water-tank_16881111.png" alt="Water Tank" class="water-tank-img">
+            </div>
+            <div class="location-name">Makne</div>
+        </a>
+          <a href="mande.html" class="location-card">
+            <div class="location-icon">
+                <img src="water-tank_16881111.png" alt="Water Tank" class="water-tank-img">
+            </div>
+            <div class="location-name">Mande</div>
+        </a>          <a href="vittalwadi.html" class="location-card">
+            <div class="location-icon">
+                <img src="water-tank_16881111.png" alt="Water Tank" class="water-tank-img">
+            </div>
+            <div class="location-name">Vittalwadi</div>
+        </a>
+          <a href="viradhan.html" class="location-card">
+            <div class="location-icon">
+                <img src="water-tank_16881111.png" alt="Water Tank" class="water-tank-img">
+            </div>
+            <div class="location-name">Viradhan</div>
+        </a>          <a href="jalsar.html" class="location-card">
+            <div class="location-icon">
+                <img src="water-tank_16881111.png" alt="Water Tank" class="water-tank-img">
+            </div>
+            <div class="location-name">Jalsar</div>
+        </a>
+          <a href="tembhikodave.html" class="location-card">
+            <div class="location-icon">
+                <img src="water-tank_16881111.png" alt="Water Tank" class="water-tank-img">
+            </div>
+            <div class="location-name">Tembhikodave</div>
+        </a>
+          <a href="umberpada.html" class="location-card">
+            <div class="location-icon">
+                <img src="water-tank_16881111.png" alt="Water Tank" class="water-tank-img">
+            </div>
+            <div class="location-name">Umberpada</div>
+        </a>        <a href="kardal.html" class="location-card">
+            <div class="location-icon">
+                <img src="water-tank_16881111.png" alt="Water Tank" class="water-tank-img">
+            </div>
+            <div class="location-name">Kardal</div>
+        </a>
+        
+    
+    </div>
+
+
+    <script>
+        // ✅ Register Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/IITM-LVL-DSPLY-RT-MON/service-worker.js')
+                .then((reg) => {
+                    console.log("Service Worker Registered");
+                    reg.onupdatefound = () => {
+                        const installingWorker = reg.installing;
+                        installingWorker.onstatechange = () => {
+                            if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                showUpdateNotification();
+                            }
+                        };
+                    };
+                }).catch((err) => console.error("Service Worker Registration Failed", err));
+        }
+
+        // ✅ Show update notification
+        function showUpdateNotification() {
+            let updateBanner = document.createElement("div");
+            updateBanner.className = "update-banner";
+            updateBanner.innerHTML = `New version available! <button onclick="window.location.reload()">Update</button>`;
+            document.body.appendChild(updateBanner);
+        }
+
+        // ✅ Handle PWA Install Button
+        let deferredPrompt;
+        window.addEventListener("beforeinstallprompt", (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById("install-button").style.display = "block";
+        });
+
+        function installPWA() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === "accepted") {
+                        console.log("PWA Installed");
+                    }
+                    deferredPrompt = null;
+                });
+            }
+        }
+
+        // ✅ Force Update Check on Load
+        if (navigator.serviceWorker) {
+            navigator.serviceWorker.getRegistration().then((reg) => {
+                if (reg) reg.update();
+            });
+        }
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
+
+</body>
+</html>

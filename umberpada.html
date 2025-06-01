@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Umberpada - Saphale Water Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            margin: 20px;
+        }
+        .header {
+            background-color: #007bff;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .back-button {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            padding: 8px 15px;
+            font-size: 16px;
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+        .back-button:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+        }
+        .card {
+            width: 300px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .card-header {
+            background: #007bff;
+            color: white;
+            padding: 10px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 5px 5px 0 0;
+        }
+        .value-box {
+            border: 2px solid #ccc;
+            padding: 10px;
+            font-size: 40px;
+            font-weight: bold;
+            color: #333;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        .timestamp {
+            font-size: 12px;
+            color: #777;
+            margin-top: 10px;
+        }
+        .indicator {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-top: 10px;
+            background: gray;
+            border: 1px solid black;
+        }
+        .control-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+        }
+        .control-button {
+            padding: 10px 15px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            flex-grow: 1;
+            margin: 0 5px;
+            color: white;
+        }
+        .open-button {
+            background-color: #28a745;
+        }
+        .open-button:hover {
+            background-color: #218838;
+        }
+        .close-button {
+            background-color: #dc3545;
+        }
+        .close-button:hover {
+            background-color: #c82333;
+        }
+        .stop-button {
+            background-color: #ffc107;
+            color: black;
+        }
+        .stop-button:hover {
+            background-color: #e0a800;
+        }
+        .section-header {
+            width: 100%;
+            margin: 20px 0 10px;
+            font-size: 24px;
+            color: #333;
+            text-align: center;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .footer {
+            margin-top: 30px;
+            color: #777;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <button class="back-button" onclick="goBack()">← Back</button>
+        <h1>Umberpada Water Management</h1>
+    </div>
+
+    <!-- Sensors Section -->
+    <h2 class="section-header">Water Level Monitoring</h2>
+    <div class="container" id="sensors-container">
+        <!-- Umberpada OHT Sensor -->
+        <div class="card">
+            <div class="card-header">Umberpada OHT</div>
+            <div class="value-box" id="umberpada_oht_cm">-- cm</div><br>
+            <div class="value-box" id="umberpada_oht_feet">--</div>
+            <div class="timestamp" id="umberpada_oht_time">Waiting for updates...</div>
+            <div class="indicator" id="umberpada_oht_indicator"></div>
+        </div>
+    </div>
+
+    <!-- Actuators Section -->
+    <h2 class="section-header">Valve Controls</h2>
+    <div class="container" id="actuators-container">
+        <!-- Umberpada Actuator -->
+        <div class="card">
+            <div class="card-header">Umberpada Actuator</div>
+            <div class="timestamp" id="umberpada_actuator_status">Status: Unknown</div>
+            <div class="indicator" id="umberpada_actuator_indicator"></div>
+            <div class="control-buttons">
+                <button class="control-button open-button" onclick="sendCommand('umberpada_actuator', 1)">Open</button>
+                <button class="control-button stop-button" onclick="sendCommand('umberpada_actuator', 3)">Stop</button>
+                <button class="control-button close-button" onclick="sendCommand('umberpada_actuator', 2)">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>© 2025 Saphale Water Management System</p>
+    </div>
+
+    <script>
+        const sensorChannels = {
+            umberpada_oht: {
+                channelID: "2765734",
+                apiKey: "AU2YOZNHIOZSHTP5",
+                field: "field5",
+                isInteger: true,
+                limits: { warning: 100, danger: 60 },
+                name: "Umberpada OHT"
+            }
+        };
+
+        const actuatorChannels = {
+            umberpada_actuator: {
+                channelID: "2765734",
+                apiKey: "SRFJYORBRKOO7II7",
+                field: "field6",
+                name: "Umberpada Actuator"
+            }
+        };
+
+        function goBack() {
+            window.location.href = "index.html";
+        }
+
+        function timeAgo(timestamp) {
+            const now = new Date();
+            const past = new Date(timestamp);
+            const diffMs = now - past;
+            const diffMinutes = Math.floor(diffMs / (1000 * 60));
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+
+            if (diffMinutes < 1) return "Just now";
+            if (diffMinutes < 60) return `${diffMinutes} min ago`;
+            return `${diffHours} hour(s) ago`;
+        }
+
+        function cmToFeetInches(cm) {
+            const inches = cm / 2.54;
+            const feet = Math.floor(inches / 12);
+            const remainingInches = Math.round(inches % 12);
+            return `${feet} ft ${remainingInches} in`;
+        }
+
+        function updateIndicator(sensor, value) {
+            const indicator = document.getElementById(sensor + "_indicator");
+            if (!indicator) return; // Skip if element doesn't exist
+            
+            const limits = sensorChannels[sensor].limits;
+            if (!limits) return; // Skip if no limits defined
+
+            if (value <= limits.danger) {
+                indicator.style.background = "red";
+            } else if (value <= limits.warning) {
+                indicator.style.background = "yellow";
+            } else {
+                indicator.style.background = "green";
+            }
+        }
+
+        function updateActuatorStatus(actuator, status) {
+            const statusElement = document.getElementById(actuator + "_status");
+            const indicator = document.getElementById(actuator + "_indicator");
+            
+            if (!statusElement || !indicator) return; // Skip if elements don't exist
+            
+            if (status === 1) {
+                statusElement.innerText = "Status: Open";
+                indicator.style.background = "green";
+            } else if (status === 2) {
+                statusElement.innerText = "Status: Closed";
+                indicator.style.background = "red";
+            } else if (status === 3) {
+                statusElement.innerText = "Status: Stopped";
+                indicator.style.background = "yellow";
+            } else {
+                statusElement.innerText = "Status: Unknown";
+                indicator.style.background = "gray";
+            }
+        }
+
+        async function fetchThingSpeakData(entityId, details) {
+            const url = `https://api.thingspeak.com/channels/${details.channelID}/feeds.json?api_key=${details.apiKey}&results=10`;
+            console.log(`Fetching data for ${entityId} from channel ${details.channelID} field ${details.field}`);
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                if (!data || !data.feeds || data.feeds.length === 0) {
+                    console.warn(`No data received for ${entityId}`);
+                    return;
+                }
+                
+                const feeds = data.feeds;
+                let lastValidValue = "--";
+                let lastUpdated = "No updates";
+
+                for (let i = feeds.length - 1; i >= 0; i--) {
+                    let value = parseFloat(feeds[i][details.field]);
+                    if (!isNaN(value)) {
+                        lastValidValue = value;
+                        lastUpdated = feeds[i].created_at;
+                        break;
+                    }
+                }
+
+                if (lastValidValue !== "--") {
+                    // Determine if this is a sensor or an actuator
+                    const isSensor = sensorChannels[entityId] !== undefined;
+                    const isActuator = actuatorChannels[entityId] !== undefined;
+                    
+                    // Format the value
+                    const formattedValue = (isSensor && details.isInteger) ? 
+                        Math.round(lastValidValue) : 
+                        parseFloat(lastValidValue).toFixed(2);
+                    
+                    if (isSensor) {
+                        // Update sensor displays
+                        const cmElement = document.getElementById(entityId + "_cm");
+                        const feetElement = document.getElementById(entityId + "_feet");
+                        const timeElement = document.getElementById(entityId + "_time");
+                        
+                        if (cmElement) cmElement.innerText = `${formattedValue} cm`;
+                        if (feetElement) feetElement.innerText = cmToFeetInches(formattedValue);
+                        if (timeElement) timeElement.innerText = "Updated " + timeAgo(lastUpdated);
+                        
+                        updateIndicator(entityId, formattedValue);
+                    }
+                    
+                    if (isActuator) {
+                        // Update actuator status
+                        updateActuatorStatus(entityId, parseInt(formattedValue));
+                    }
+                }
+            } catch (error) {
+                console.error(`Error fetching data for ${entityId}:`, error);
+            }
+        }
+
+        async function sendCommand(actuator, command) {
+            if (!actuatorChannels[actuator]) {
+                console.error(`Unknown actuator: ${actuator}`);
+                return;
+            }
+
+            const details = actuatorChannels[actuator];
+            const url = `https://api.thingspeak.com/update?api_key=${details.apiKey}&${details.field}=${command}`;
+            
+            // Immediately update UI to give feedback
+            updateActuatorStatus(actuator, command);
+            
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                
+                const data = await response.text();
+                
+                if (data > 0) {
+                    console.log(`Command ${command} sent successfully to ${actuator}`);
+                } else {
+                    console.error(`Failed to send command to ${actuator}`);
+                    alert(`Failed to send command to ${actuator}. Please try again.`);
+                    // Reset status to unknown if command failed
+                    updateActuatorStatus(actuator, 0);
+                }
+            } catch (error) {
+                console.error(`Error sending command to ${actuator}:`, error);
+                alert(`Error sending command to ${actuator}: ${error.message}`);
+                // Reset status to unknown if command failed
+                updateActuatorStatus(actuator, 0);
+            }
+        }
+
+        function updateAllData() {
+            // Update all sensors
+            Object.keys(sensorChannels).forEach(sensor => 
+                fetchThingSpeakData(sensor, sensorChannels[sensor])
+            );
+            
+            // Update all actuators status
+            Object.keys(actuatorChannels).forEach(actuator => {
+                fetchThingSpeakData(actuator, {
+                    channelID: actuatorChannels[actuator].channelID,
+                    apiKey: "AU2YOZNHIOZSHTP5", // Umberpada read API key
+                    field: actuatorChannels[actuator].field
+                });
+            });
+        }
+
+        // Initial update and set interval for periodic updates
+        updateAllData();
+        setInterval(updateAllData, 10000); // Update every 10 seconds
+    </script>
+</body>
+</html>

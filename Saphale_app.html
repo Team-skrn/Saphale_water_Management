@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saphale App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            margin: 20px;
+        }
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            padding: 10px 15px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 1000;
+        }
+        .back-button:hover {
+            background-color: #0056b3;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 70px; /* Increased margin to avoid overlap */
+        }
+        .card {
+            width: 300px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            padding: 20px;
+            position: relative;
+            margin-bottom: 20px;
+        }
+        .card-header {
+            background: #007bff;
+            color: white;
+            padding: 10px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 5px 5px 0 0;
+        }
+        .value-box {
+            border: 2px solid #ccc;
+            padding: 10px;
+            font-size: 40px;
+            font-weight: bold;
+            color: #333;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        .timestamp {
+            font-size: 12px;
+            color: #777;
+            margin-top: 10px;
+        }
+        .indicator {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-top: 10px;
+            background: gray;
+            border: 1px solid black;
+        }
+        .control-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+        }
+        .control-button {
+            padding: 10px 15px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            flex-grow: 1;
+            margin: 0 5px;
+            color: white;
+        }
+        .open-button {
+            background-color: #28a745;
+        }
+        .open-button:hover {
+            background-color: #218838;
+        }
+        .close-button {
+            background-color: #dc3545;
+        }
+        .close-button:hover {
+            background-color: #c82333;
+        }
+        .stop-button {
+            background-color: #ffc107;
+            color: black;
+        }
+        .stop-button:hover {
+            background-color: #e0a800;
+        }        .section-header {
+            width: 100%;
+            margin: 30px 0 15px;
+            font-size: 24px;
+            color: #333;
+            text-align: center;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .tabs {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 60px;
+            gap: 5px;
+            padding: 0 10px;
+        }
+        .tab-button {
+            padding: 10px 15px;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        .tab-button.active {
+            background-color: #007bff;
+            color: white;
+            border-color: #0056b3;
+        }
+        .tab-button:hover:not(.active) {
+            background-color: #e0e0e0;
+        }
+        .location-card {
+            transition: all 0.3s ease;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <button class="back-button" onclick="goBack()">← Back</button>    <!-- Location Tabs -->
+    <div class="tabs">
+        <button class="tab-button active" onclick="showLocation('all')">All Locations</button>
+        <button class="tab-button" onclick="showLocation('mbr')">MBR</button>
+        <button class="tab-button" onclick="showLocation('kurlai')">Kurlai Mandir</button>
+        <button class="tab-button" onclick="showLocation('makne')">Makne</button>
+        <button class="tab-button" onclick="showLocation('mande')">Mande</button>
+        <button class="tab-button" onclick="showLocation('vittalwadi')">Vittalwadi</button>
+        <button class="tab-button" onclick="showLocation('viradhan')">Viradhan</button>
+        <button class="tab-button" onclick="showLocation('jalsar')">Jalsar</button>
+        <button class="tab-button" onclick="showLocation('tembhikodave')">Tembhikodave</button>
+        <button class="tab-button" onclick="showLocation('umberpada')">Umberpada</button>
+        <button class="tab-button" onclick="showLocation('kardal')">Kardal</button>
+    </div>
+
+    <!-- Sensors Section -->
+    <h2 class="section-header">Sensors</h2>
+    <div class="container" id="sensors-container">
+        <!-- Sensor cards will be dynamically generated here by JavaScript -->
+    </div>
+
+    <!-- Actuators Section -->
+    <h2 class="section-header">Actuators</h2>
+    <div class="container" id="actuators-container">
+        <!-- Actuator cards will be dynamically generated here by JavaScript -->
+    </div><script>
+        const sensorChannels = {
+            // MBR Sensors
+            mbr_sump: {
+                channelID: "2219996",
+                apiKey: "220U2OYJFBGZ1JRT",
+                field: "field1",
+                isInteger: true,
+                limits: { warning: 100, danger: 60 },
+                name: "MBR Sump"
+            },
+            mbr_oht: {
+                channelID: "2219996",
+                apiKey: "220U2OYJFBGZ1JRT",
+                field: "field2",
+                isInteger: true,
+                limits: { warning: 100, danger: 60 },
+                name: "MBR OHT"
+            },
+            kurlai_mandir_oht: {
+                channelID: "2219996",
+                apiKey: "220U2OYJFBGZ1JRT",
+                field: "field7",
+                isInteger: true,
+                limits: { warning: 100, danger: 60 },
+                name: "Kurlai Mandir OHT"
+            },
+            // Mande Sensors
+            mande_oht: {
+                channelID: "2765361",
+                apiKey: "ILE6YKNRNEH0RRAS",
+                field: "field2",
+                isInteger: true,
+                limits: { warning: 100, danger: 60 },
+                name: "Mande OHT"
+            },
+            vittalwadi_oht: {
+                channelID: "2765361",
+                apiKey: "ILE6YKNRNEH0RRAS",
+                field: "field4",
+                isInteger: true,
+                limits: { warning: 100, danger: 60 },
+                name: "Vittalwadi OHT"
+            },
+            viradhan_oht: {
+                channelID: "2765361",
+                apiKey: "ILE6YKNRNEH0RRAS",
+                field: "field6",
+                isInteger: true,
+                limits: { warning: 100, danger: 60 },
+                name: "Viradhan OHT"
+            },
+            // Jalsar Sensor
+            jalsar_oht: {
+                channelID: "2765734",
+                apiKey: "AU2YOZNHIOZSHTP1",
+                field: "field1",
+                isInteger: true,
+                limits: { warning: 100, danger: 60 },
+                name: "Jalsar OHT"
+            },
+            // Tembhikodave Sensor
+            tembhikodave_oht: {
+                channelID: "2765736",
+                apiKey: "AU2YOZNHIOZSHTP3",
+                field: "field3",
+                isInteger: true,
+                limits: { warning: 100, danger: 60 },
+                name: "Tembhikodave OHT"
+            },
+            // Umberpada Sensor
+            umberpada_oht: {
+                channelID: "2765738",
+                apiKey: "AU2YOZNHIOZSHTP5",
+                field: "field5",
+                isInteger: true,
+                limits: { warning: 100, danger: 60 },
+                name: "Umberpada OHT"
+            },
+            // Kardal Sensor
+            kardal_oht: {
+                channelID: "2765740",
+                apiKey: "AU2YOZNHIOZSHTP7",
+                field: "field7",
+                isInteger: true,
+                limits: { warning: 100, danger: 60 },
+                name: "Kardal OHT"
+            }
+        };
+
+        const actuatorChannels = {
+            // MBR Actuators
+            valve1: {
+                channelID: "2219996",
+                apiKey: "DIWFHMDD86F3BF5I",
+                field: "field3",
+                name: "Valve 1"
+            },
+            valve2: {
+                channelID: "2219996",
+                apiKey: "DIWFHMDD86F3BF5I",
+                field: "field4",
+                name: "Valve 2"
+            },
+            valve3: {
+                channelID: "2219996",
+                apiKey: "DIWFHMDD86F3BF5I",
+                field: "field5",
+                name: "Valve 3"
+            },
+            valve4: {
+                channelID: "2219996",
+                apiKey: "DIWFHMDD86F3BF5I",
+                field: "field6",
+                name: "Valve 4"
+            },
+            kurlai_mandir_actuator: {
+                channelID: "2219996",
+                apiKey: "DIWFHMDD86F3BF5I",
+                field: "field8",
+                name: "Kurlai Mandir Actuator"
+            },
+            // Other Actuators
+            makne_actuator: {
+                channelID: "2765361",
+                apiKey: "BL482EYUFKR4TETI",
+                field: "field1",
+                name: "Makne Actuator"
+            },
+            mande_actuator: {
+                channelID: "2765361",
+                apiKey: "BL482EYUFKR4TETI",
+                field: "field3",
+                name: "Mande Actuator"
+            },
+            vittalwadi_actuator: {
+                channelID: "2765361",
+                apiKey: "BL482EYUFKR4TETI",
+                field: "field5",
+                name: "Vittalwadi Actuator"
+            },
+            viradhan_actuator: {
+                channelID: "2765361",
+                apiKey: "BL482EYUFKR4TETI",
+                field: "field7",
+                name: "Viradhan Actuator"
+            },
+            jalsar_actuator: {
+                channelID: "2765735",
+                apiKey: "SRFJYORBRKOO7II3",
+                field: "field2",
+                name: "Jalsar Actuator"
+            },
+            tembhikodave_actuator: {
+                channelID: "2765737",
+                apiKey: "SRFJYORBRKOO7II5",
+                field: "field4",
+                name: "Tembhikodave Actuator"
+            },
+            umberpada_actuator: {
+                channelID: "2765739",
+                apiKey: "SRFJYORBRKOO7II7",
+                field: "field6",
+                name: "Umberpada Actuator"
+            },
+            kardal_actuator: {
+                channelID: "2765741",
+                apiKey: "SRFJYORBRKOO7II9",
+                field: "field8",
+                name: "Kardal Actuator"
+            }
+        };
+
+        function goBack() {
+            window.history.back();
+        }
+
+        function timeAgo(timestamp) {
+            const now = new Date();
+            const past = new Date(timestamp);
+            const diffMs = now - past;
+            const diffMinutes = Math.floor(diffMs / (1000 * 60));
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+
+            if (diffMinutes < 1) return "Just now";
+            if (diffMinutes < 60) return `${diffMinutes} min ago`;
+            return `${diffHours} hour(s) ago`;
+        }
+
+        function cmToFeetInches(cm) {
+            const inches = cm / 2.54;
+            const feet = Math.floor(inches / 12);
+            const remainingInches = Math.round(inches % 12);
+            return `${feet} ft ${remainingInches} in`;
+        }        function updateIndicator(sensor, value) {
+            const indicator = document.getElementById(sensor + "_indicator");
+            if (!indicator) return; // Skip if element doesn't exist
+            
+            const limits = sensorChannels[sensor].limits;
+            if (!limits) return; // Skip if no limits defined
+
+            if (value <= limits.danger) {
+                indicator.style.background = "red";
+            } else if (value <= limits.warning) {
+                indicator.style.background = "yellow";
+            } else {
+                indicator.style.background = "green";
+            }
+        }
+
+        function updateActuatorStatus(actuator, status) {
+            const statusElement = document.getElementById(actuator + "_status");
+            const indicator = document.getElementById(actuator + "_indicator");
+            
+            if (!statusElement || !indicator) return; // Skip if elements don't exist
+            
+            if (status === 1) {
+                statusElement.innerText = "Status: Open";
+                indicator.style.background = "green";
+            } else if (status === 2) {
+                statusElement.innerText = "Status: Closed";
+                indicator.style.background = "red";
+            } else if (status === 3) {
+                statusElement.innerText = "Status: Stopped";
+                indicator.style.background = "yellow";
+            } else {
+                statusElement.innerText = "Status: Unknown";
+                indicator.style.background = "gray";
+            }
+        }
+
+        async function fetchThingSpeakData(sensor, details) {
+            const url = `https://api.thingspeak.com/channels/${details.channelID}/feeds.json?api_key=${details.apiKey}&results=10`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                const feeds = data.feeds;
+
+                let lastValidValue = "--";
+                let lastUpdated = "No updates";
+
+                for (let i = feeds.length - 1; i >= 0; i--) {
+                    let value = parseFloat(feeds[i][details.field]);
+                    if (!isNaN(value)) {
+                        lastValidValue = value;
+                        lastUpdated = feeds[i].created_at;
+                        break;
+                    }
+                }
+
+                if (lastValidValue !== "--") {
+                    // Format the value
+                    const formattedValue = details.isInteger ? 
+                        Math.round(lastValidValue) : 
+                        parseFloat(lastValidValue).toFixed(2);
+
+                    // Check if this is a sensor or actuator
+                    if (sensorChannels[sensor]) {
+                        // Update sensor displays
+                        const cmElement = document.getElementById(sensor + "_cm");
+                        const feetElement = document.getElementById(sensor + "_feet");
+                        const timeElement = document.getElementById(sensor + "_time");
+                        
+                        if (cmElement) cmElement.innerText = `${formattedValue} cm`;
+                        if (feetElement) feetElement.innerText = cmToFeetInches(formattedValue);
+                        if (timeElement) timeElement.innerText = "Updated " + timeAgo(lastUpdated);
+                        
+                        updateIndicator(sensor, formattedValue);
+                    }
+                    
+                    // For actuators, update their status
+                    if (actuatorChannels[sensor]) {
+                        updateActuatorStatus(sensor, parseInt(formattedValue));
+                    }
+                }
+            } catch (error) {
+                console.error(`Error fetching data for ${sensor}:`, error);
+            }
+        }
+
+        async function sendCommand(actuator, command) {
+            if (!actuatorChannels[actuator]) {
+                console.error(`Unknown actuator: ${actuator}`);
+                return;
+            }
+
+            const details = actuatorChannels[actuator];
+            const url = `https://api.thingspeak.com/update?api_key=${details.apiKey}&${details.field}=${command}`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.text();
+                
+                if (data > 0) {
+                    console.log(`Command ${command} sent successfully to ${actuator}`);
+                    updateActuatorStatus(actuator, command);
+                } else {
+                    console.error(`Failed to send command to ${actuator}`);
+                    alert(`Failed to send command to ${actuator}. Please try again.`);
+                }
+            } catch (error) {
+                console.error(`Error sending command to ${actuator}:`, error);
+                alert(`Error sending command to ${actuator}: ${error.message}`);
+            }
+        }        // Function to create sensor cards
+        function createSensorCards() {
+            const container = document.getElementById('sensors-container');
+            container.innerHTML = ''; // Clear container
+
+            Object.keys(sensorChannels).forEach(sensorId => {
+                const sensor = sensorChannels[sensorId];
+                const locationClass = getLocationClass(sensorId);
+                
+                const card = document.createElement('div');
+                card.className = `card location-card ${locationClass}`;
+                
+                const content = `
+                    <div>
+                        <div class="card-header">${sensor.name}</div>
+                        <div class="value-box" id="${sensorId}_cm">-- cm</div><br>
+                        <div class="value-box" id="${sensorId}_feet">--</div>
+                        <div class="timestamp" id="${sensorId}_time">Waiting for updates...</div>
+                        <div class="indicator" id="${sensorId}_indicator"></div>
+                    </div>
+                `;
+                card.innerHTML = content;
+                container.appendChild(card);
+            });
+        }
+
+        // Function to create actuator cards
+        function createActuatorCards() {
+            const container = document.getElementById('actuators-container');
+            container.innerHTML = ''; // Clear container
+
+            Object.keys(actuatorChannels).forEach(actuatorId => {
+                const actuator = actuatorChannels[actuatorId];
+                const locationClass = getLocationClass(actuatorId);
+                
+                const card = document.createElement('div');
+                card.className = `card location-card ${locationClass}`;
+                
+                const content = `
+                    <div class="card-header">${actuator.name}</div>
+                    <div class="timestamp" id="${actuatorId}_status">Status: Unknown</div>
+                    <div class="indicator" id="${actuatorId}_indicator"></div>
+                    <div class="control-buttons">
+                        <button class="control-button open-button" onclick="sendCommand('${actuatorId}', 1)">Open</button>
+                        <button class="control-button stop-button" onclick="sendCommand('${actuatorId}', 3)">Stop</button>
+                        <button class="control-button close-button" onclick="sendCommand('${actuatorId}', 2)">Close</button>
+                    </div>
+                `;
+                card.innerHTML = content;
+                container.appendChild(card);
+            });
+        }
+
+        // Helper function to get location class from entity ID
+        function getLocationClass(entityId) {
+            if (entityId.includes('mbr')) return 'location-mbr';
+            if (entityId.includes('kurlai')) return 'location-kurlai';
+            if (entityId.includes('makne')) return 'location-makne';
+            if (entityId.includes('mande')) return 'location-mande';
+            if (entityId.includes('vittalwadi')) return 'location-vittalwadi';
+            if (entityId.includes('viradhan')) return 'location-viradhan';
+            if (entityId.includes('jalsar')) return 'location-jalsar';
+            if (entityId.includes('tembhikodave')) return 'location-tembhikodave';
+            if (entityId.includes('umberpada')) return 'location-umberpada';
+            if (entityId.includes('kardal')) return 'location-kardal';
+            if (entityId.includes('valve')) return 'location-mbr';
+            return '';
+        }
+
+        // Function to show/hide location cards
+        function showLocation(location) {
+            // Update active tab
+            document.querySelectorAll('.tab-button').forEach(tab => {
+                tab.classList.remove('active');
+                if (tab.textContent.toLowerCase().includes(location) || 
+                    (location === 'all' && tab.textContent.includes('All'))) {
+                    tab.classList.add('active');
+                }
+            });
+            
+            // Show/hide cards
+            const cards = document.querySelectorAll('.location-card');
+            cards.forEach(card => {
+                if (location === 'all') {
+                    card.classList.remove('hidden');
+                } else {
+                    if (card.classList.contains(`location-${location}`)) {
+                        card.classList.remove('hidden');
+                    } else {
+                        card.classList.add('hidden');
+                    }
+                }
+            });
+        }
+        
+        function updateAllSensors() {
+            // Update all sensors
+            Object.keys(sensorChannels).forEach(sensor => 
+                fetchThingSpeakData(sensor, sensorChannels[sensor])
+            );
+            
+            // Update all actuators status
+            Object.keys(actuatorChannels).forEach(actuator => {
+                // Find a read API key for this actuator's channel
+                let readApiKey = null;
+                for (const sensorId in sensorChannels) {
+                    if (sensorChannels[sensorId].channelID === actuatorChannels[actuator].channelID) {
+                        readApiKey = sensorChannels[sensorId].apiKey;
+                        break;
+                    }
+                }
+                
+                // If we have a read API key, fetch the actuator status
+                if (readApiKey) {
+                    fetchThingSpeakData(actuator, {
+                        channelID: actuatorChannels[actuator].channelID,
+                        apiKey: readApiKey,
+                        field: actuatorChannels[actuator].field
+                    });
+                }
+            });
+        }
+
+        // Initialize the interface
+        function initializeInterface() {
+            createSensorCards();
+            createActuatorCards();
+            updateAllSensors();
+            
+            // Set interval for periodic updates
+            setInterval(updateAllSensors, 10000); // Update every 10 seconds
+        }
+
+        // Initialize everything when the page loads
+        window.addEventListener('DOMContentLoaded', initializeInterface);
+    </script>
+</body>
+</html>
