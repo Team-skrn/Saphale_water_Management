@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mande - Saphale Water Management</title>
+    <!-- Load Google Charts Library -->
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -131,6 +133,55 @@
             color: #777;
             font-size: 14px;
         }
+        
+        /* Chart styling */
+        #chart_container {
+            position: relative;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+        }
+        
+        #level_chart {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .indicator {
+            transition: all 0.5s ease;
+            position: relative;
+        }
+        
+        .indicator::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            height: 80%;
+            border-radius: 50%;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .indicator.animated::after {
+            animation: ripple 1.5s infinite;
+            opacity: 1;
+        }
+        
+        @keyframes ripple {
+            0% {
+                width: 80%;
+                height: 80%;
+                opacity: 0.7;
+            }
+            100% {
+                width: 120%;
+                height: 120%;
+                opacity: 0;
+            }
+        }
     </style>
 </head>
 <body>
@@ -150,16 +201,25 @@
             <div class="timestamp" id="mande_oht_time">Waiting for updates...</div>
             <div class="indicator" id="mande_oht_indicator"></div>
         </div>
+
+        <!-- Sensor History Graph Card -->
+        <div class="card" style="width: 95%">
+            <div class="card-header">Water Level - 24 Hour History</div>
+            <div id="chart_container" style="height: 300px; width: 100%; margin-top: 20px;">
+                <div id="level_chart"></div>
+            </div>
+            <div class="timestamp" id="chart_update_time">Waiting for history data...</div>
+        </div>
     </div>
 
     <!-- Actuators Section -->
-    <h2 class="section-header">Actuator Controls</h2>
+    <h2 class="section-header">Valve Controls</h2>
     <div class="container" id="actuators-container">
         <!-- Mande Actuator -->
         <div class="card">
             <div class="card-header">Mande Actuator</div>
-            <div class="timestamp" id="mande_actuator_status">Status: Unknown</div>
-            <div class="indicator" id="mande_actuator_indicator"></div>
+            <div id="mande_actuator_status" style="font-size: 24px; font-weight: bold; margin: 15px 0; padding: 15px; background-color: #f0f8ff; border-radius: 8px; border: 2px solid #007bff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-transform: uppercase; letter-spacing: 1px;">Status: Unknown</div>
+            <div class="indicator" id="mande_actuator_indicator" style="width: 150px; height: 150px; margin: 20px auto; transition: all 0.3s ease; box-shadow: 0 0 15px rgba(0,0,0,0.2);"></div>
             <div class="control-buttons">
                 <button class="control-button open-button" onclick="sendCommand('mande_actuator', 1)">Open</button>
                 <button class="control-button stop-button" onclick="sendCommand('mande_actuator', 3)">Stop</button>
@@ -218,10 +278,10 @@
 
         function updateIndicator(sensor, value) {
             const indicator = document.getElementById(sensor + "_indicator");
-            if (!indicator) return; // Skip if element doesn't exist
+            if (!indicator) return;
             
             const limits = sensorChannels[sensor].limits;
-            if (!limits) return; // Skip if no limits defined
+            if (!limits) return;
 
             if (value <= limits.danger) {
                 indicator.style.background = "red";
@@ -232,48 +292,71 @@
             }
         }
 
-        function updateActuatorStatus(actuator, status) {
-            const statusElement = document.getElementById(actuator + "_status");
+        function updateActuatorStatus(actuator, value) {
             const indicator = document.getElementById(actuator + "_indicator");
+            const statusElement = document.getElementById(actuator + "_status");
             
-            if (!statusElement || !indicator) return; // Skip if elements don't exist
+            if (!indicator) return;
             
-            if (status === 1) {
-                statusElement.innerText = "Status: Open";
-                indicator.style.background = "green";
-            } else if (status === 2) {
-                statusElement.innerText = "Status: Closed";
-                indicator.style.background = "red";
-            } else if (status === 3) {
-                statusElement.innerText = "Status: Stopped";
+            if (value <= 1) {
+                indicator.style.background = "blue";
+                indicator.style.border = "3px solid #dc3545";
+                indicator.title = "Valve is opening";
+                if (statusElement) statusElement.innerText = "Status: Opening";
+            } else if (value == 2) {
                 indicator.style.background = "yellow";
-            } else {
-                statusElement.innerText = "Status: Unknown";
+                indicator.style.border = "3px solid #ffc107";
+                indicator.title = "Valve is closing";
+                if (statusElement) statusElement.innerText = "Status: Closing";
+            } else if (value >= 4) {
+                indicator.style.background = "green";
+                indicator.style.border = "3px solid #28a745";
+                indicator.title = "Valve is fully open";
+                if (statusElement) statusElement.innerText = "Status: Fully Open";
+            } else if (value >= 5) {
+                indicator.style.background = "green";
+                indicator.style.border = "3px solid #28a745";
+                indicator.title = "Valve is fully closed";
+                if (statusElement) statusElement.innerText = "Status: Fully Closed";
+            } else if (value >= 3) {
                 indicator.style.background = "gray";
+                indicator.style.border = "3px solid #28a745";
+                indicator.title = "Valve is stopped";
+                if (statusElement) statusElement.innerText = "Status: Stopped";
             }
         }
 
         async function fetchThingSpeakData(entityId, details) {
-            const url = `https://api.thingspeak.com/channels/${details.channelID}/feeds.json?api_key=${details.apiKey}&results=10`;
+            const url = `https://api.thingspeak.com/channels/${details.channelID}/feeds.json?api_key=${details.apiKey}&results=20`;
 
             try {
-                const response = await fetch(url);
+                const response = await fetch(url, { 
+                    method: 'GET',
+                    cache: 'no-cache'
+                });
+                
                 if (!response.ok) {
                     throw new Error(`HTTP error! Status: ${response.status}`);
                 }
                 
                 const data = await response.json();
+                
                 if (!data || !data.feeds || data.feeds.length === 0) {
-                    console.warn(`No data received for ${entityId}`);
                     return;
                 }
                 
                 const feeds = data.feeds;
                 let lastValidValue = "--";
                 let lastUpdated = "No updates";
-
+                
                 for (let i = feeds.length - 1; i >= 0; i--) {
-                    let value = parseFloat(feeds[i][details.field]);
+                    let rawValue = feeds[i][details.field];
+                    
+                    if (rawValue === null || rawValue === undefined || rawValue === "") {
+                        continue;
+                    }
+                    
+                    let value = parseFloat(rawValue);
                     if (!isNaN(value)) {
                         lastValidValue = value;
                         lastUpdated = feeds[i].created_at;
@@ -282,17 +365,14 @@
                 }
 
                 if (lastValidValue !== "--") {
-                    // Determine if this is a sensor or an actuator
                     const isSensor = sensorChannels[entityId] !== undefined;
                     const isActuator = actuatorChannels[entityId] !== undefined;
                     
-                    // Format the value
                     const formattedValue = (isSensor && details.isInteger) ? 
                         Math.round(lastValidValue) : 
                         parseFloat(lastValidValue).toFixed(2);
                     
                     if (isSensor) {
-                        // Update sensor displays
                         const cmElement = document.getElementById(entityId + "_cm");
                         const feetElement = document.getElementById(entityId + "_feet");
                         const timeElement = document.getElementById(entityId + "_time");
@@ -305,7 +385,6 @@
                     }
                     
                     if (isActuator) {
-                        // Update actuator status
                         updateActuatorStatus(entityId, parseInt(formattedValue));
                     }
                 }
@@ -323,7 +402,6 @@
             const details = actuatorChannels[actuator];
             const url = `https://api.thingspeak.com/update?api_key=${details.apiKey}&${details.field}=${command}`;
             
-            // Immediately update UI to give feedback
             updateActuatorStatus(actuator, command);
             
             try {
@@ -339,36 +417,166 @@
                 } else {
                     console.error(`Failed to send command to ${actuator}`);
                     alert(`Failed to send command to ${actuator}. Please try again.`);
-                    // Reset status to unknown if command failed
                     updateActuatorStatus(actuator, 0);
                 }
             } catch (error) {
                 console.error(`Error sending command to ${actuator}:`, error);
                 alert(`Error sending command to ${actuator}: ${error.message}`);
-                // Reset status to unknown if command failed
                 updateActuatorStatus(actuator, 0);
             }
         }
 
         function updateAllData() {
-            // Update all sensors
             Object.keys(sensorChannels).forEach(sensor => 
                 fetchThingSpeakData(sensor, sensorChannels[sensor])
             );
             
-            // Update all actuators status
             Object.keys(actuatorChannels).forEach(actuator => {
                 fetchThingSpeakData(actuator, {
                     channelID: actuatorChannels[actuator].channelID,
-                    apiKey: "ILE6YKNRNEH0RRAS", // Read API key
+                    apiKey: "ILE6YKNRNEH0RRAS", // Mande read API key
                     field: actuatorChannels[actuator].field
                 });
             });
         }
 
-        // Initial update and set interval for periodic updates
+        // Load Google Charts and set up the time series chart
+        google.charts.load('current', {'packages':['corechart']});
+        google.charts.setOnLoadCallback(initializeChart);
+        
+        let chart;
+        let chartData;
+
+        function initializeChart() {
+            chartData = new google.visualization.DataTable();
+            chartData.addColumn('datetime', 'Time');
+            chartData.addColumn('number', 'Water Level (cm)');
+            chartData.addColumn({type: 'string', role: 'tooltip'});
+            
+            const warningLevel = sensorChannels.mande_oht.limits.warning;
+            const dangerLevel = sensorChannels.mande_oht.limits.danger;
+            
+            const chartOptions = {
+                title: 'Water Level History (Last 24 Hours)',
+                titleTextStyle: { 
+                    color: '#333',
+                    fontSize: 16,
+                    bold: true
+                },
+                legend: { position: 'none' },
+                hAxis: {
+                    title: 'Time',
+                    format: 'HH:mm',
+                    gridlines: { count: 12 }
+                },
+                vAxis: {
+                    title: 'Water Level (cm)',
+                    minValue: 0,
+                    ticks: [0, dangerLevel, warningLevel, warningLevel + 50, warningLevel + 100]
+                },
+                colors: ['#007bff'],
+                lineWidth: 3,
+                pointSize: 5,
+                animation: {
+                    startup: true,
+                    duration: 1000,
+                    easing: 'out'
+                }
+            };
+            
+            chart = new google.visualization.LineChart(document.getElementById('level_chart'));
+            chart.draw(chartData, chartOptions);
+            
+            fetchHistoricalData();
+        }
+        
+        async function fetchHistoricalData() {
+            try {
+                const sensorInfo = sensorChannels.mande_oht;
+                const endDate = new Date();
+                const startDate = new Date(endDate);
+                startDate.setDate(startDate.getDate() - 1);
+                
+                const startStr = `${startDate.getFullYear()}-${(startDate.getMonth()+1).toString().padStart(2, '0')}-${startDate.getDate().toString().padStart(2, '0')}%20${startDate.getHours().toString().padStart(2, '0')}:${startDate.getMinutes().toString().padStart(2, '0')}:${startDate.getSeconds().toString().padStart(2, '0')}`;
+                const endStr = `${endDate.getFullYear()}-${(endDate.getMonth()+1).toString().padStart(2, '0')}-${endDate.getDate().toString().padStart(2, '0')}%20${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}:${endDate.getSeconds().toString().padStart(2, '0')}`;
+                
+                const url = `https://api.thingspeak.com/channels/${sensorInfo.channelID}/fields/${sensorInfo.field.replace('field', '')}.json?api_key=${sensorInfo.apiKey}&start=${startStr}&end=${endStr}&results=8000`;
+                
+                const response = await fetch(url, { cache: 'no-cache' });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (!data || !data.feeds || data.feeds.length === 0) {
+                    document.getElementById('chart_update_time').innerText = "No historical data available";
+                    return;
+                }
+                
+                const rows = [];
+                data.feeds.forEach(feed => {
+                    if (feed[sensorInfo.field]) {
+                        const date = new Date(feed.created_at);
+                        const value = parseFloat(feed[sensorInfo.field]);
+                        
+                        if (!isNaN(value)) {
+                            const formattedDate = new Date(date);
+                            const tooltip = `${formattedDate.toLocaleDateString()} ${formattedDate.toLocaleTimeString()}\nLevel: ${Math.round(value)} cm`;
+                            rows.push([formattedDate, value, tooltip]);
+                        }
+                    }
+                });
+                
+                chartData.removeRows(0, chartData.getNumberOfRows());
+                chartData.addRows(rows);
+                
+                const warningLevel = sensorChannels.mande_oht.limits.warning;
+                const dangerLevel = sensorChannels.mande_oht.limits.danger;
+                
+                const options = {
+                    title: 'Water Level History (Last 24 Hours)',
+                    titleTextStyle: { 
+                        color: '#333',
+                        fontSize: 16,
+                        bold: true
+                    },
+                    legend: { position: 'none' },
+                    hAxis: {
+                        title: 'Time',
+                        format: 'HH:mm',
+                        gridlines: { count: 12 }
+                    },
+                    vAxis: {
+                        title: 'Water Level (cm)',
+                        minValue: 0,
+                        ticks: [0, dangerLevel, warningLevel, warningLevel + 50, warningLevel + 100]
+                    },
+                    colors: ['#007bff'],
+                    lineWidth: 3,
+                    pointSize: 5,
+                    animation: {
+                        duration: 1000,
+                        easing: 'out'
+                    }
+                };
+                
+                chart.draw(chartData, options);
+                
+                document.getElementById('chart_update_time').innerText = 
+                    `Chart updated: ${new Date().toLocaleTimeString()} • ${rows.length} data points`;
+                    
+            } catch (error) {
+                console.error("Error fetching historical data:", error);
+                document.getElementById('chart_update_time').innerText = 
+                    `Error loading chart data: ${error.message}`;
+            }
+        }
+        
         updateAllData();
-        setInterval(updateAllData, 10000); // Update every 10 seconds
+        setInterval(updateAllData, 1000);
+        setInterval(fetchHistoricalData, 60000);
     </script>
 </body>
 </html>

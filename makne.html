@@ -59,28 +59,16 @@
             font-weight: bold;
             border-radius: 5px 5px 0 0;
         }
-        .value-box {
-            border: 2px solid #ccc;
-            padding: 10px;
-            font-size: 40px;
-            font-weight: bold;
-            color: #333;
-            display: inline-block;
-            margin-top: 10px;
-        }
-        .timestamp {
-            font-size: 12px;
-            color: #777;
-            margin-top: 10px;
-        }
         .indicator {
-            width: 100px;
-            height: 100px;
+            width: 150px;
+            height: 150px;
             border-radius: 50%;
             display: inline-block;
-            margin-top: 10px;
+            margin: 20px auto;
             background: gray;
             border: 1px solid black;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
         }
         .control-buttons {
             display: flex;
@@ -131,6 +119,42 @@
             color: #777;
             font-size: 14px;
         }
+        
+        .indicator {
+            transition: all 0.5s ease;
+            position: relative;
+        }
+        
+        .indicator::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            height: 80%;
+            border-radius: 50%;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .indicator.animated::after {
+            animation: ripple 1.5s infinite;
+            opacity: 1;
+        }
+        
+        @keyframes ripple {
+            0% {
+                width: 80%;
+                height: 80%;
+                opacity: 0.7;
+            }
+            100% {
+                width: 120%;
+                height: 120%;
+                opacity: 0;
+            }
+        }
     </style>
 </head>
 <body>
@@ -140,12 +164,12 @@
     </div>
 
     <!-- Actuators Section -->
-    <h2 class="section-header">Actuator Controls</h2>
+    <h2 class="section-header">Valve Controls</h2>
     <div class="container" id="actuators-container">
         <!-- Makne Actuator -->
         <div class="card">
             <div class="card-header">Makne Actuator</div>
-            <div class="timestamp" id="makne_actuator_status">Status: Unknown</div>
+            <div id="makne_actuator_status" style="font-size: 24px; font-weight: bold; margin: 15px 0; padding: 15px; background-color: #f0f8ff; border-radius: 8px; border: 2px solid #007bff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-transform: uppercase; letter-spacing: 1px;">Status: Unknown</div>
             <div class="indicator" id="makne_actuator_indicator"></div>
             <div class="control-buttons">
                 <button class="control-button open-button" onclick="sendCommand('makne_actuator', 1)">Open</button>
@@ -173,73 +197,78 @@
             window.location.href = "index.html";
         }
 
-        function timeAgo(timestamp) {
-            const now = new Date();
-            const past = new Date(timestamp);
-            const diffMs = now - past;
-            const diffMinutes = Math.floor(diffMs / (1000 * 60));
-            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-
-            if (diffMinutes < 1) return "Just now";
-            if (diffMinutes < 60) return `${diffMinutes} min ago`;
-            return `${diffHours} hour(s) ago`;
-        }
-
-        function updateActuatorStatus(actuator, status) {
-            const statusElement = document.getElementById(actuator + "_status");
+        function updateActuatorStatus(actuator, value) {
             const indicator = document.getElementById(actuator + "_indicator");
+            const statusElement = document.getElementById(actuator + "_status");
             
-            if (!statusElement || !indicator) return; // Skip if elements don't exist
+            if (!indicator) return;
             
-            if (status === 1) {
-                statusElement.innerText = "Status: Open";
-                indicator.style.background = "green";
-            } else if (status === 2) {
-                statusElement.innerText = "Status: Closed";
-                indicator.style.background = "red";
-            } else if (status === 3) {
-                statusElement.innerText = "Status: Stopped";
+            if (value <= 1) {
+                indicator.style.background = "blue";
+                indicator.style.border = "3px solid #dc3545";
+                indicator.title = "Valve is opening";
+                if (statusElement) statusElement.innerText = "Status: Opening";
+            } else if (value == 2) {
                 indicator.style.background = "yellow";
-            } else {
-                statusElement.innerText = "Status: Unknown";
+                indicator.style.border = "3px solid #ffc107";
+                indicator.title = "Valve is closing";
+                if (statusElement) statusElement.innerText = "Status: Closing";
+            } else if (value >= 4) {
+                indicator.style.background = "green";
+                indicator.style.border = "3px solid #28a745";
+                indicator.title = "Valve is fully open";
+                if (statusElement) statusElement.innerText = "Status: Fully Open";
+            } else if (value >= 5) {
+                indicator.style.background = "green";
+                indicator.style.border = "3px solid #28a745";
+                indicator.title = "Valve is fully closed";
+                if (statusElement) statusElement.innerText = "Status: Fully Closed";
+            } else if (value >= 3) {
                 indicator.style.background = "gray";
+                indicator.style.border = "3px solid #28a745";
+                indicator.title = "Valve is stopped";
+                if (statusElement) statusElement.innerText = "Status: Stopped";
             }
         }
 
         async function fetchThingSpeakData(entityId, details) {
-            const url = `https://api.thingspeak.com/channels/${details.channelID}/feeds.json?api_key=${details.apiKey}&results=10`;
+            const url = `https://api.thingspeak.com/channels/${details.channelID}/feeds.json?api_key=${details.apiKey}&results=20`;
 
             try {
-                const response = await fetch(url);
+                const response = await fetch(url, { 
+                    method: 'GET',
+                    cache: 'no-cache'
+                });
+                
                 if (!response.ok) {
                     throw new Error(`HTTP error! Status: ${response.status}`);
                 }
                 
                 const data = await response.json();
+                
                 if (!data || !data.feeds || data.feeds.length === 0) {
-                    console.warn(`No data received for ${entityId}`);
                     return;
                 }
                 
                 const feeds = data.feeds;
                 let lastValidValue = "--";
-                let lastUpdated = "No updates";
-
+                
                 for (let i = feeds.length - 1; i >= 0; i--) {
-                    let value = parseFloat(feeds[i][details.field]);
+                    let rawValue = feeds[i][details.field];
+                    
+                    if (rawValue === null || rawValue === undefined || rawValue === "") {
+                        continue;
+                    }
+                    
+                    let value = parseFloat(rawValue);
                     if (!isNaN(value)) {
                         lastValidValue = value;
-                        lastUpdated = feeds[i].created_at;
                         break;
                     }
                 }
 
                 if (lastValidValue !== "--") {
-                    // Format the value
-                    const formattedValue = parseFloat(lastValidValue).toFixed(2);
-                    
-                    // Update actuator status
-                    updateActuatorStatus(entityId, parseInt(formattedValue));
+                    updateActuatorStatus(entityId, parseInt(lastValidValue));
                 }
             } catch (error) {
                 console.error(`Error fetching data for ${entityId}:`, error);
@@ -255,7 +284,6 @@
             const details = actuatorChannels[actuator];
             const url = `https://api.thingspeak.com/update?api_key=${details.apiKey}&${details.field}=${command}`;
             
-            // Immediately update UI to give feedback
             updateActuatorStatus(actuator, command);
             
             try {
@@ -271,31 +299,27 @@
                 } else {
                     console.error(`Failed to send command to ${actuator}`);
                     alert(`Failed to send command to ${actuator}. Please try again.`);
-                    // Reset status to unknown if command failed
                     updateActuatorStatus(actuator, 0);
                 }
             } catch (error) {
                 console.error(`Error sending command to ${actuator}:`, error);
                 alert(`Error sending command to ${actuator}: ${error.message}`);
-                // Reset status to unknown if command failed
                 updateActuatorStatus(actuator, 0);
             }
         }
 
         function updateAllData() {
-            // Update actuator status
             Object.keys(actuatorChannels).forEach(actuator => {
                 fetchThingSpeakData(actuator, {
                     channelID: actuatorChannels[actuator].channelID,
-                    apiKey: "ILE6YKNRNEH0RRAS", // Read API key for this channel
+                    apiKey: "ILE6YKNRNEH0RRAS", // Makne read API key
                     field: actuatorChannels[actuator].field
                 });
             });
         }
-
-        // Initial update and set interval for periodic updates
+        
         updateAllData();
-        setInterval(updateAllData, 10000); // Update every 10 seconds
+        setInterval(updateAllData, 1000);
     </script>
 </body>
 </html>

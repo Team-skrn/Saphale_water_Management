@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MBR - Saphale Water Management</title>
+    <!-- Load Google Charts Library -->
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -131,6 +133,74 @@
             color: #777;
             font-size: 14px;
         }
+          /* Chart styling */
+        #sump_chart_container, #oht_chart_container {
+            position: relative;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+        }
+        
+        #sump_level_chart, #oht_level_chart {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .chart-legend {
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        
+        .chart-legend-item {
+            display: flex;
+            align-items: center;
+            margin: 0 10px;
+            font-size: 12px;
+        }
+        
+        .chart-legend-color {
+            width: 12px;
+            height: 12px;
+            margin-right: 5px;
+            border-radius: 2px;
+        }
+        
+        .indicator {
+            transition: all 0.5s ease;
+            position: relative;
+        }
+        
+        .indicator::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            height: 80%;
+            border-radius: 50%;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .indicator.animated::after {
+            animation: ripple 1.5s infinite;
+            opacity: 1;
+        }
+        
+        @keyframes ripple {
+            0% {
+                width: 80%;
+                height: 80%;
+                opacity: 0.7;
+            }
+            100% {
+                width: 120%;
+                height: 120%;
+                opacity: 0;
+            }
+        }
     </style>
 </head>
 <body>
@@ -150,7 +220,7 @@
             <div class="timestamp" id="mbr_sump_time">Waiting for updates...</div>
             <div class="indicator" id="mbr_sump_indicator"></div>
         </div>
-        
+
         <!-- MBR OHT Sensor -->
         <div class="card">
             <div class="card-header">MBR OHT</div>
@@ -158,6 +228,22 @@
             <div class="value-box" id="mbr_oht_feet">--</div>
             <div class="timestamp" id="mbr_oht_time">Waiting for updates...</div>
             <div class="indicator" id="mbr_oht_indicator"></div>
+        </div>        <!-- MBR Sump History Graph Card -->
+        <div class="card" style="width: 45%">
+            <div class="card-header">MBR Sump - 24 Hour History</div>
+            <div id="sump_chart_container" style="height: 300px; width: 100%; margin-top: 20px;">
+                <div id="sump_level_chart"></div>
+            </div>
+            <div class="timestamp" id="sump_chart_update_time">Waiting for history data...</div>
+        </div>
+
+        <!-- MBR OHT History Graph Card -->
+        <div class="card" style="width: 45%">
+            <div class="card-header">MBR OHT - 24 Hour History</div>
+            <div id="oht_chart_container" style="height: 300px; width: 100%; margin-top: 20px;">
+                <div id="oht_level_chart"></div>
+            </div>
+            <div class="timestamp" id="oht_chart_update_time">Waiting for history data...</div>
         </div>
     </div>
 
@@ -167,48 +253,48 @@
         <!-- Valve 1 -->
         <div class="card">
             <div class="card-header">Valve 1</div>
-            <div class="timestamp" id="valve1_status">Status: Unknown</div>
-            <div class="indicator" id="valve1_indicator"></div>
+            <div id="valve_1_status" style="font-size: 24px; font-weight: bold; margin: 15px 0; padding: 15px; background-color: #f0f8ff; border-radius: 8px; border: 2px solid #007bff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-transform: uppercase; letter-spacing: 1px;">Status: Unknown</div>
+            <div class="indicator" id="valve_1_indicator" style="width: 150px; height: 150px; margin: 20px auto; transition: all 0.3s ease; box-shadow: 0 0 15px rgba(0,0,0,0.2);"></div>
             <div class="control-buttons">
-                <button class="control-button open-button" onclick="sendCommand('valve1', 1)">Open</button>
-                <button class="control-button stop-button" onclick="sendCommand('valve1', 3)">Stop</button>
-                <button class="control-button close-button" onclick="sendCommand('valve1', 2)">Close</button>
+                <button class="control-button open-button" onclick="sendCommand('valve_1', 1)">Open</button>
+                <button class="control-button stop-button" onclick="sendCommand('valve_1', 3)">Stop</button>
+                <button class="control-button close-button" onclick="sendCommand('valve_1', 2)">Close</button>
             </div>
         </div>
-        
+
         <!-- Valve 2 -->
         <div class="card">
             <div class="card-header">Valve 2</div>
-            <div class="timestamp" id="valve2_status">Status: Unknown</div>
-            <div class="indicator" id="valve2_indicator"></div>
+            <div id="valve_2_status" style="font-size: 24px; font-weight: bold; margin: 15px 0; padding: 15px; background-color: #f0f8ff; border-radius: 8px; border: 2px solid #007bff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-transform: uppercase; letter-spacing: 1px;">Status: Unknown</div>
+            <div class="indicator" id="valve_2_indicator" style="width: 150px; height: 150px; margin: 20px auto; transition: all 0.3s ease; box-shadow: 0 0 15px rgba(0,0,0,0.2);"></div>
             <div class="control-buttons">
-                <button class="control-button open-button" onclick="sendCommand('valve2', 1)">Open</button>
-                <button class="control-button stop-button" onclick="sendCommand('valve2', 3)">Stop</button>
-                <button class="control-button close-button" onclick="sendCommand('valve2', 2)">Close</button>
+                <button class="control-button open-button" onclick="sendCommand('valve_2', 1)">Open</button>
+                <button class="control-button stop-button" onclick="sendCommand('valve_2', 3)">Stop</button>
+                <button class="control-button close-button" onclick="sendCommand('valve_2', 2)">Close</button>
             </div>
         </div>
-        
+
         <!-- Valve 3 -->
         <div class="card">
             <div class="card-header">Valve 3</div>
-            <div class="timestamp" id="valve3_status">Status: Unknown</div>
-            <div class="indicator" id="valve3_indicator"></div>
+            <div id="valve_3_status" style="font-size: 24px; font-weight: bold; margin: 15px 0; padding: 15px; background-color: #f0f8ff; border-radius: 8px; border: 2px solid #007bff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-transform: uppercase; letter-spacing: 1px;">Status: Unknown</div>
+            <div class="indicator" id="valve_3_indicator" style="width: 150px; height: 150px; margin: 20px auto; transition: all 0.3s ease; box-shadow: 0 0 15px rgba(0,0,0,0.2);"></div>
             <div class="control-buttons">
-                <button class="control-button open-button" onclick="sendCommand('valve3', 1)">Open</button>
-                <button class="control-button stop-button" onclick="sendCommand('valve3', 3)">Stop</button>
-                <button class="control-button close-button" onclick="sendCommand('valve3', 2)">Close</button>
+                <button class="control-button open-button" onclick="sendCommand('valve_3', 1)">Open</button>
+                <button class="control-button stop-button" onclick="sendCommand('valve_3', 3)">Stop</button>
+                <button class="control-button close-button" onclick="sendCommand('valve_3', 2)">Close</button>
             </div>
         </div>
-        
+
         <!-- Valve 4 -->
         <div class="card">
             <div class="card-header">Valve 4</div>
-            <div class="timestamp" id="valve4_status">Status: Unknown</div>
-            <div class="indicator" id="valve4_indicator"></div>
+            <div id="valve_4_status" style="font-size: 24px; font-weight: bold; margin: 15px 0; padding: 15px; background-color: #f0f8ff; border-radius: 8px; border: 2px solid #007bff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-transform: uppercase; letter-spacing: 1px;">Status: Unknown</div>
+            <div class="indicator" id="valve_4_indicator" style="width: 150px; height: 150px; margin: 20px auto; transition: all 0.3s ease; box-shadow: 0 0 15px rgba(0,0,0,0.2);"></div>
             <div class="control-buttons">
-                <button class="control-button open-button" onclick="sendCommand('valve4', 1)">Open</button>
-                <button class="control-button stop-button" onclick="sendCommand('valve4', 3)">Stop</button>
-                <button class="control-button close-button" onclick="sendCommand('valve4', 2)">Close</button>
+                <button class="control-button open-button" onclick="sendCommand('valve_4', 1)">Open</button>
+                <button class="control-button stop-button" onclick="sendCommand('valve_4', 3)">Stop</button>
+                <button class="control-button close-button" onclick="sendCommand('valve_4', 2)">Close</button>
             </div>
         </div>
     </div>
@@ -238,25 +324,25 @@
         };
 
         const actuatorChannels = {
-            valve1: {
+            valve_1: {
                 channelID: "2219996",
                 apiKey: "DIWFHMDD86F3BF5I",
                 field: "field3",
                 name: "Valve 1"
             },
-            valve2: {
+            valve_2: {
                 channelID: "2219996",
                 apiKey: "DIWFHMDD86F3BF5I",
                 field: "field4",
                 name: "Valve 2"
             },
-            valve3: {
+            valve_3: {
                 channelID: "2219996",
                 apiKey: "DIWFHMDD86F3BF5I",
                 field: "field5",
                 name: "Valve 3"
             },
-            valve4: {
+            valve_4: {
                 channelID: "2219996",
                 apiKey: "DIWFHMDD86F3BF5I",
                 field: "field6",
@@ -289,10 +375,10 @@
 
         function updateIndicator(sensor, value) {
             const indicator = document.getElementById(sensor + "_indicator");
-            if (!indicator) return; // Skip if element doesn't exist
+            if (!indicator) return;
             
             const limits = sensorChannels[sensor].limits;
-            if (!limits) return; // Skip if no limits defined
+            if (!limits) return;
 
             if (value <= limits.danger) {
                 indicator.style.background = "red";
@@ -303,49 +389,73 @@
             }
         }
 
-        function updateActuatorStatus(actuator, status) {
-            const statusElement = document.getElementById(actuator + "_status");
+        function updateActuatorStatus(actuator, value) {
             const indicator = document.getElementById(actuator + "_indicator");
+            const statusElement = document.getElementById(actuator + "_status");
             
-            if (!statusElement || !indicator) return; // Skip if elements don't exist
+            if (!indicator) return;
             
-            if (status === 1) {
-                statusElement.innerText = "Status: Open";
-                indicator.style.background = "green";
-            } else if (status === 2) {
-                statusElement.innerText = "Status: Closed";
-                indicator.style.background = "red";
-            } else if (status === 3) {
-                statusElement.innerText = "Status: Stopped";
+            if (value <= 1) {
+                indicator.style.background = "blue";
+                indicator.style.border = "3px solid #dc3545";
+                indicator.title = "Valve is opening";
+                if (statusElement) statusElement.innerText = "Status: Opening";
+            } else if (value == 2) {
                 indicator.style.background = "yellow";
-            } else {
-                statusElement.innerText = "Status: Unknown";
+                indicator.style.border = "3px solid #ffc107";
+                indicator.title = "Valve is closing";
+                if (statusElement) statusElement.innerText = "Status: Closing";
+            } else if (value >= 4) {
+                indicator.style.background = "green";
+                indicator.style.border = "3px solid #28a745";
+                indicator.title = "Valve is fully open";
+                if (statusElement) statusElement.innerText = "Status: Fully Open";
+            } else if (value >= 5) {
+                indicator.style.background = "green";
+                indicator.style.border = "3px solid #28a745";
+                indicator.title = "Valve is fully closed";
+                if (statusElement) statusElement.innerText = "Status: Fully Closed";
+            } else if (value >= 3) {
                 indicator.style.background = "gray";
+                indicator.style.border = "3px solid #28a745";
+                indicator.title = "Valve is stopped";
+                if (statusElement) statusElement.innerText = "Status: Stopped";
             }
         }
 
         async function fetchThingSpeakData(entityId, details) {
-            const url = `https://api.thingspeak.com/channels/${details.channelID}/feeds.json?api_key=${details.apiKey}&results=10`;
-            console.log(`Fetching data for ${entityId} from channel ${details.channelID} field ${details.field}`);
+            const url = `https://api.thingspeak.com/channels/${details.channelID}/feeds.json?api_key=${details.apiKey}&results=20`;
+            console.log(`Fetching data for ${entityId} from channel ${details.channelID} field ${details.field} using API key: ${details.apiKey}`);
 
             try {
-                const response = await fetch(url);
+                const response = await fetch(url, { 
+                    method: 'GET',
+                    cache: 'no-cache'
+                });
+                
                 if (!response.ok) {
                     throw new Error(`HTTP error! Status: ${response.status}`);
                 }
                 
                 const data = await response.json();
+                
                 if (!data || !data.feeds || data.feeds.length === 0) {
-                    console.warn(`No data received for ${entityId}`);
+                    console.warn(`No feeds received for ${entityId}`);
                     return;
                 }
                 
                 const feeds = data.feeds;
                 let lastValidValue = "--";
                 let lastUpdated = "No updates";
-
+                
                 for (let i = feeds.length - 1; i >= 0; i--) {
-                    let value = parseFloat(feeds[i][details.field]);
+                    let rawValue = feeds[i][details.field];
+                    
+                    if (rawValue === null || rawValue === undefined || rawValue === "") {
+                        continue;
+                    }
+                    
+                    let value = parseFloat(rawValue);
                     if (!isNaN(value)) {
                         lastValidValue = value;
                         lastUpdated = feeds[i].created_at;
@@ -354,17 +464,14 @@
                 }
 
                 if (lastValidValue !== "--") {
-                    // Determine if this is a sensor or an actuator
                     const isSensor = sensorChannels[entityId] !== undefined;
                     const isActuator = actuatorChannels[entityId] !== undefined;
                     
-                    // Format the value
                     const formattedValue = (isSensor && details.isInteger) ? 
                         Math.round(lastValidValue) : 
                         parseFloat(lastValidValue).toFixed(2);
                     
                     if (isSensor) {
-                        // Update sensor displays
                         const cmElement = document.getElementById(entityId + "_cm");
                         const feetElement = document.getElementById(entityId + "_feet");
                         const timeElement = document.getElementById(entityId + "_time");
@@ -377,7 +484,6 @@
                     }
                     
                     if (isActuator) {
-                        // Update actuator status
                         updateActuatorStatus(entityId, parseInt(formattedValue));
                     }
                 }
@@ -395,7 +501,6 @@
             const details = actuatorChannels[actuator];
             const url = `https://api.thingspeak.com/update?api_key=${details.apiKey}&${details.field}=${command}`;
             
-            // Immediately update UI to give feedback
             updateActuatorStatus(actuator, command);
             
             try {
@@ -411,24 +516,20 @@
                 } else {
                     console.error(`Failed to send command to ${actuator}`);
                     alert(`Failed to send command to ${actuator}. Please try again.`);
-                    // Reset status to unknown if command failed
                     updateActuatorStatus(actuator, 0);
                 }
             } catch (error) {
                 console.error(`Error sending command to ${actuator}:`, error);
                 alert(`Error sending command to ${actuator}: ${error.message}`);
-                // Reset status to unknown if command failed
                 updateActuatorStatus(actuator, 0);
             }
         }
 
         function updateAllData() {
-            // Update all sensors
             Object.keys(sensorChannels).forEach(sensor => 
                 fetchThingSpeakData(sensor, sensorChannels[sensor])
             );
             
-            // Update all actuators status
             Object.keys(actuatorChannels).forEach(actuator => {
                 fetchThingSpeakData(actuator, {
                     channelID: actuatorChannels[actuator].channelID,
@@ -436,11 +537,217 @@
                     field: actuatorChannels[actuator].field
                 });
             });
-        }
+        }        // Load Google Charts and set up the time series charts
+        google.charts.load('current', {'packages':['corechart']});
+        google.charts.setOnLoadCallback(initializeCharts);
+        
+        let sumpChart, ohtChart;
+        let sumpChartData, ohtChartData;
 
-        // Initial update and set interval for periodic updates
+        function initializeCharts() {
+            // Initialize Sump Chart
+            sumpChartData = new google.visualization.DataTable();
+            sumpChartData.addColumn('datetime', 'Time');
+            sumpChartData.addColumn('number', 'MBR Sump (cm)');
+            sumpChartData.addColumn({type: 'string', role: 'tooltip'});
+            
+            const sumpChartOptions = {
+                title: 'MBR Sump Water Level History',
+                titleTextStyle: { 
+                    color: '#333',
+                    fontSize: 14,
+                    bold: true
+                },
+                legend: { position: 'bottom' },
+                hAxis: {
+                    title: 'Time',
+                    format: 'HH:mm',
+                    gridlines: { count: 8 }
+                },
+                vAxis: {
+                    title: 'Water Level (cm)',
+                    minValue: 0
+                },
+                colors: ['#007bff'],
+                lineWidth: 3,
+                pointSize: 5,
+                animation: {
+                    startup: true,
+                    duration: 1000,
+                    easing: 'out'
+                }
+            };
+            
+            sumpChart = new google.visualization.LineChart(document.getElementById('sump_level_chart'));
+            sumpChart.draw(sumpChartData, sumpChartOptions);
+
+            // Initialize OHT Chart
+            ohtChartData = new google.visualization.DataTable();
+            ohtChartData.addColumn('datetime', 'Time');
+            ohtChartData.addColumn('number', 'MBR OHT (cm)');
+            ohtChartData.addColumn({type: 'string', role: 'tooltip'});
+            
+            const ohtChartOptions = {
+                title: 'MBR OHT Water Level History',
+                titleTextStyle: { 
+                    color: '#333',
+                    fontSize: 14,
+                    bold: true
+                },
+                legend: { position: 'bottom' },
+                hAxis: {
+                    title: 'Time',
+                    format: 'HH:mm',
+                    gridlines: { count: 8 }
+                },
+                vAxis: {
+                    title: 'Water Level (cm)',
+                    minValue: 0
+                },
+                colors: ['#28a745'],
+                lineWidth: 3,
+                pointSize: 5,
+                animation: {
+                    startup: true,
+                    duration: 1000,
+                    easing: 'out'
+                }
+            };
+            
+            ohtChart = new google.visualization.LineChart(document.getElementById('oht_level_chart'));
+            ohtChart.draw(ohtChartData, ohtChartOptions);
+            
+            fetchHistoricalData();
+        }
+          async function fetchHistoricalData() {
+            try {
+                const endDate = new Date();
+                const startDate = new Date(endDate);
+                startDate.setDate(startDate.getDate() - 1);
+                
+                const startStr = `${startDate.getFullYear()}-${(startDate.getMonth()+1).toString().padStart(2, '0')}-${startDate.getDate().toString().padStart(2, '0')}%20${startDate.getHours().toString().padStart(2, '0')}:${startDate.getMinutes().toString().padStart(2, '0')}:${startDate.getSeconds().toString().padStart(2, '0')}`;
+                const endStr = `${endDate.getFullYear()}-${(endDate.getMonth()+1).toString().padStart(2, '0')}-${endDate.getDate().toString().padStart(2, '0')}%20${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}:${endDate.getSeconds().toString().padStart(2, '0')}`;
+                
+                const url = `https://api.thingspeak.com/channels/2219996/feeds.json?api_key=220U2OYJFBGZ1JRT&start=${startStr}&end=${endStr}&results=8000`;
+                
+                const response = await fetch(url, { cache: 'no-cache' });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (!data || !data.feeds || data.feeds.length === 0) {
+                    console.warn("No historical data received");
+                    document.getElementById('sump_chart_update_time').innerText = "No historical data available";
+                    document.getElementById('oht_chart_update_time').innerText = "No historical data available";
+                    return;
+                }
+                
+                const sumpRows = [];
+                const ohtRows = [];
+                
+                data.feeds.forEach(feed => {
+                    const date = new Date(feed.created_at);
+                    const sumpValue = feed.field1 ? parseFloat(feed.field1) : null;
+                    const ohtValue = feed.field2 ? parseFloat(feed.field2) : null;
+                    
+                    const formattedDate = new Date(date);
+                    
+                    if (sumpValue !== null) {
+                        const sumpTooltip = `${formattedDate.toLocaleDateString()} ${formattedDate.toLocaleTimeString()}\nSump: ${Math.round(sumpValue)} cm`;
+                        sumpRows.push([formattedDate, sumpValue, sumpTooltip]);
+                    }
+                    
+                    if (ohtValue !== null) {
+                        const ohtTooltip = `${formattedDate.toLocaleDateString()} ${formattedDate.toLocaleTimeString()}\nOHT: ${Math.round(ohtValue)} cm`;
+                        ohtRows.push([formattedDate, ohtValue, ohtTooltip]);
+                    }
+                });
+                
+                // Update Sump Chart
+                sumpChartData.removeRows(0, sumpChartData.getNumberOfRows());
+                sumpChartData.addRows(sumpRows);
+                
+                const sumpOptions = {
+                    title: 'MBR Sump Water Level History',
+                    titleTextStyle: { 
+                        color: '#333',
+                        fontSize: 14,
+                        bold: true
+                    },
+                    legend: { position: 'bottom' },
+                    hAxis: {
+                        title: 'Time',
+                        format: 'HH:mm',
+                        gridlines: { count: 8 }
+                    },
+                    vAxis: {
+                        title: 'Water Level (cm)',
+                        minValue: 0
+                    },
+                    colors: ['#007bff'],
+                    lineWidth: 3,
+                    pointSize: 5,
+                    animation: {
+                        duration: 1000,
+                        easing: 'out'
+                    }
+                };
+                
+                sumpChart.draw(sumpChartData, sumpOptions);
+                
+                // Update OHT Chart
+                ohtChartData.removeRows(0, ohtChartData.getNumberOfRows());
+                ohtChartData.addRows(ohtRows);
+                
+                const ohtOptions = {
+                    title: 'MBR OHT Water Level History',
+                    titleTextStyle: { 
+                        color: '#333',
+                        fontSize: 14,
+                        bold: true
+                    },
+                    legend: { position: 'bottom' },
+                    hAxis: {
+                        title: 'Time',
+                        format: 'HH:mm',
+                        gridlines: { count: 8 }
+                    },
+                    vAxis: {
+                        title: 'Water Level (cm)',
+                        minValue: 0
+                    },
+                    colors: ['#28a745'],
+                    lineWidth: 3,
+                    pointSize: 5,
+                    animation: {
+                        duration: 1000,
+                        easing: 'out'
+                    }
+                };
+                
+                ohtChart.draw(ohtChartData, ohtOptions);
+                
+                const currentTime = new Date().toLocaleTimeString();
+                document.getElementById('sump_chart_update_time').innerText = 
+                    `Sump chart updated: ${currentTime} • ${sumpRows.length} data points`;
+                document.getElementById('oht_chart_update_time').innerText = 
+                    `OHT chart updated: ${currentTime} • ${ohtRows.length} data points`;
+                    
+            } catch (error) {
+                console.error("Error fetching historical data:", error);
+                document.getElementById('sump_chart_update_time').innerText = 
+                    `Error loading sump chart data: ${error.message}`;
+                document.getElementById('oht_chart_update_time').innerText = 
+                    `Error loading OHT chart data: ${error.message}`;
+            }
+        }
+        
         updateAllData();
-        setInterval(updateAllData, 10000); // Update every 10 seconds
+        setInterval(updateAllData, 1000);
+        setInterval(fetchHistoricalData, 60000);
     </script>
 </body>
 </html>

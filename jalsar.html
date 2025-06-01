@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
+<head>    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jalsar - Saphale Water Management</title>
+    <!-- Load Google Charts Library -->
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -125,11 +126,122 @@
             text-align: center;
             border-bottom: 2px solid #007bff;
             padding-bottom: 10px;
-        }
-        .footer {
+        }        .footer {
             margin-top: 30px;
             color: #777;
             font-size: 14px;
+        }
+        
+        /* Chart styling */
+        #chart_container {
+            position: relative;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+        }
+        
+        #level_chart {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .chart-legend {
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        
+        .chart-legend-item {
+            display: flex;
+            align-items: center;
+            margin: 0 10px;
+            font-size: 12px;
+        }
+        
+        .chart-legend-color {
+            width: 12px;
+            height: 12px;
+            margin-right: 5px;
+            border-radius: 2px;
+        }
+        
+        /* LED Grid Styles */
+        .led-grid {
+            margin-top: 20px;
+        }
+        
+        .led {
+            transition: all 0.3s ease;
+            cursor: default;
+        }
+        
+        .led.active {
+            background-color: #007bff !important;
+            color: white !important;
+            box-shadow: 0 0 10px #007bff, 0 0 20px rgba(0, 123, 255, 0.5);
+            animation: pulse 2s infinite;
+        }
+        
+        .led.active-open {
+            background-color: #28a745 !important;
+            color: white !important;
+            box-shadow: 0 0 10px #28a745, 0 0 20px rgba(40, 167, 69, 0.5);
+        }
+        
+        .led.active-closed {
+            background-color: #dc3545 !important;
+            color: white !important;
+            box-shadow: 0 0 10px #dc3545, 0 0 20px rgba(220, 53, 69, 0.5);
+        }
+        
+        /* Pulsing effect for active states */
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 10px rgba(0, 123, 255, 0.7);
+            }
+            50% {
+                box-shadow: 0 0 20px rgba(0, 123, 255, 1), 0 0 30px rgba(0, 123, 255, 0.5);
+            }
+            100% {
+                box-shadow: 0 0 10px rgba(0, 123, 255, 0.7);
+            }
+        }
+        
+        /* Enhanced indicator styles */
+        .indicator {
+            transition: all 0.5s ease;
+            position: relative;
+        }
+        
+        .indicator::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            height: 80%;
+            border-radius: 50%;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .indicator.animated::after {
+            animation: ripple 1.5s infinite;
+            opacity: 1;
+        }
+        
+        @keyframes ripple {
+            0% {
+                width: 80%;
+                height: 80%;
+                opacity: 0.7;
+            }
+            100% {
+                width: 120%;
+                height: 120%;
+                opacity: 0;
+            }
         }
     </style>
 </head>
@@ -142,33 +254,41 @@
     <!-- Sensors Section -->
     <h2 class="section-header">Water Level Monitoring</h2>
     <div class="container" id="sensors-container">
-        <!-- Jalsar OHT Sensor -->
-        <div class="card">
+        <!-- Jalsar OHT Sensor -->        <div class="card">
             <div class="card-header">Jalsar OHT</div>
             <div class="value-box" id="jalsar_oht_cm">-- cm</div><br>
             <div class="value-box" id="jalsar_oht_feet">--</div>
             <div class="timestamp" id="jalsar_oht_time">Waiting for updates...</div>
             <div class="indicator" id="jalsar_oht_indicator"></div>
         </div>
-    </div>
-
-    <!-- Actuators Section -->
+          <!-- Sensor History Graph Card -->
+        <div class="card" style="width: 95%">
+            <div class="card-header">Water Level - 24 Hour History</div>
+            <div id="chart_container" style="height: 300px; width: 100%; margin-top: 20px;">
+                <div id="level_chart"></div>
+            </div>
+           
+            <div class="timestamp" id="chart_update_time">Waiting for history data...</div>
+        </div>
+    </div>    <!-- Actuators Section -->
     <h2 class="section-header">Valve Controls</h2>
     <div class="container" id="actuators-container">
         <!-- Jalsar Actuator -->
         <div class="card">
             <div class="card-header">Jalsar Actuator</div>
-            <div class="timestamp" id="jalsar_actuator_status">Status: Unknown</div>
-            <div class="indicator" id="jalsar_actuator_indicator"></div>
+            <div id="jalsar_actuator_status" style="font-size: 24px; font-weight: bold; margin: 15px 0; padding: 15px; background-color: #f0f8ff; border-radius: 8px; border: 2px solid #007bff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-transform: uppercase; letter-spacing: 1px;">Status: Unknown</div>
+            
+            <div class="indicator" id="jalsar_actuator_indicator" style="width: 150px; height: 150px; margin: 20px auto; transition: all 0.3s ease; box-shadow: 0 0 15px rgba(0,0,0,0.2);"></div>
+            
+            
+            
             <div class="control-buttons">
                 <button class="control-button open-button" onclick="sendCommand('jalsar_actuator', 1)">Open</button>
                 <button class="control-button stop-button" onclick="sendCommand('jalsar_actuator', 3)">Stop</button>
                 <button class="control-button close-button" onclick="sendCommand('jalsar_actuator', 2)">Close</button>
             </div>
         </div>
-    </div>
-
-    <div class="footer">
+    </div><div class="footer">
         <p>© 2025 Saphale Water Management System</p>
     </div>
 
@@ -187,7 +307,7 @@
         const actuatorChannels = {
             jalsar_actuator: {
                 channelID: "2765734",
-                apiKey: "SRFJYORBRKOO7II3",
+                apiKey: "SRFJYORBRKOO7II2",
                 field: "field2",
                 name: "Jalsar Actuator"
             }
@@ -230,54 +350,98 @@
             } else {
                 indicator.style.background = "green";
             }
-        }
-
-        function updateActuatorStatus(actuator, status) {
-            const statusElement = document.getElementById(actuator + "_status");
+        }        function updateActuatorStatus(actuator, value) {
             const indicator = document.getElementById(actuator + "_indicator");
+            const statusElement = document.getElementById(actuator + "_status");
             
-            if (!statusElement || !indicator) return; // Skip if elements don't exist
+            if (!indicator) return;
             
-            if (status === 1) {
-                statusElement.innerText = "Status: Open";
-                indicator.style.background = "green";
-            } else if (status === 2) {
-                statusElement.innerText = "Status: Closed";
-                indicator.style.background = "red";
-            } else if (status === 3) {
-                statusElement.innerText = "Status: Stopped";
+            // Use the same logic as updateIndicator for sensors
+            if (value <= 1) {
+                indicator.style.background = "blue";
+                indicator.style.border = "3px solid #dc3545";
+                indicator.title = "Valve is opening";
+                if (statusElement) statusElement.innerText = "Status: Opening";
+            } else if (value == 2) {
                 indicator.style.background = "yellow";
-            } else {
-                statusElement.innerText = "Status: Unknown";
+                indicator.style.border = "3px solid #ffc107";
+                indicator.title = "Valve is closing";
+                if (statusElement) statusElement.innerText = "Status: Closing";
+            } else if (value >= 4) {
+                indicator.style.background = "green";
+                indicator.style.border = "3px solid #28a745";
+                indicator.title = "Valve is fully open";
+                if (statusElement) statusElement.innerText = "Status: Fully Open";
+            } else if (value >= 5) {
+                indicator.style.background = "green";
+                indicator.style.border = "3px solid #28a745";
+                indicator.title = "Valve is fully closed";
+                if (statusElement) statusElement.innerText = "Status: Fully Closed";
+            } else if (value >= 3) {
                 indicator.style.background = "gray";
+                indicator.style.border = "3px solid #28a745";
+                indicator.title = "Valve is stopped";
+                if (statusElement) statusElement.innerText = "Status: Stopped";
             }
         }
 
-        async function fetchThingSpeakData(entityId, details) {
-            const url = `https://api.thingspeak.com/channels/${details.channelID}/feeds.json?api_key=${details.apiKey}&results=10`;
-            console.log(`Fetching data for ${entityId} from channel ${details.channelID} field ${details.field}`);
+                async function fetchThingSpeakData(entityId, details) {
+            const url = `https://api.thingspeak.com/channels/${details.channelID}/feeds.json?api_key=${details.apiKey}&results=20`;
+            console.log(`Fetching data for ${entityId} from channel ${details.channelID} field ${details.field} using API key: ${details.apiKey}`);
 
             try {
-                const response = await fetch(url);
+                console.log(`Sending fetch request to ThingSpeak for ${entityId}...`);
+                const response = await fetch(url, { 
+                    method: 'GET',
+                    cache: 'no-cache' // Prevent caching issues
+                });
+                
                 if (!response.ok) {
                     throw new Error(`HTTP error! Status: ${response.status}`);
                 }
                 
+                console.log(`Response received for ${entityId}, parsing JSON...`);
                 const data = await response.json();
-                if (!data || !data.feeds || data.feeds.length === 0) {
-                    console.warn(`No data received for ${entityId}`);
+                
+                if (!data) {
+                    console.warn(`No data object received for ${entityId}`);
+                    return;
+                }
+                
+                if (!data.feeds || data.feeds.length === 0) {
+                    console.warn(`No feeds received for ${entityId}`);
                     return;
                 }
                 
                 const feeds = data.feeds;
                 let lastValidValue = "--";
                 let lastUpdated = "No updates";
+                
+                console.log(`Received ${feeds.length} feeds for ${entityId}`);
+                
+                // Debug the data we're receiving
+                if (entityId.includes('actuator')) {
+                    console.log(`ACTUATOR DATA for ${entityId}:`);
+                    console.log(`Looking for field: ${details.field}`);
+                    for (let i = feeds.length - 1; i >= Math.max(0, feeds.length - 3); i--) {
+                        console.log(`Feed ${i}:`, JSON.stringify(feeds[i]));
+                    }
+                }
 
                 for (let i = feeds.length - 1; i >= 0; i--) {
-                    let value = parseFloat(feeds[i][details.field]);
+                    let rawValue = feeds[i][details.field];
+                    console.log(`${entityId} - Feed ${i}: ${details.field} = ${rawValue}`);
+                    
+                    // Handle empty or null values
+                    if (rawValue === null || rawValue === undefined || rawValue === "") {
+                        continue;
+                    }
+                    
+                    let value = parseFloat(rawValue);
                     if (!isNaN(value)) {
                         lastValidValue = value;
                         lastUpdated = feeds[i].created_at;
+                        console.log(`${entityId} - Found valid value: ${value} at ${lastUpdated}`);
                         break;
                     }
                 }
@@ -365,11 +529,293 @@
                     field: actuatorChannels[actuator].field
                 });
             });
+        }        // Debug function to force an update and check data
+        async function debugForceUpdate() {
+            console.log("==== MANUAL DEBUG UPDATE REQUESTED ====");
+            
+            try {
+                // Manual check of sensor elements
+                const cmElement = document.getElementById("jalsar_oht_cm");
+                const feetElement = document.getElementById("jalsar_oht_feet");
+                const timeElement = document.getElementById("jalsar_oht_time");
+                
+                console.log("Debug: Checking sensor elements:");
+                console.log("- CM Element:", cmElement ? "EXISTS" : "MISSING");
+                console.log("- Feet Element:", feetElement ? "EXISTS" : "MISSING");
+                console.log("- Time Element:", timeElement ? "EXISTS" : "MISSING");
+                
+                // Check actuator elements too
+                const actuatorStatus = document.getElementById("jalsar_actuator_status");
+                const actuatorIndicator = document.getElementById("jalsar_actuator_indicator");
+                
+                console.log("Debug: Checking actuator elements:");
+                console.log("- Status Element:", actuatorStatus ? "EXISTS" : "MISSING");
+                console.log("- Indicator Element:", actuatorIndicator ? "EXISTS" : "MISSING");
+                
+                // Direct query of ThingSpeak
+                const actuatorChannel = actuatorChannels.jalsar_actuator;
+                const url = `https://api.thingspeak.com/channels/${actuatorChannel.channelID}/feeds.json?api_key=AU2YOZNHIOZSHTP1&results=1`;
+                
+                console.log("Debug: Directly querying ThingSpeak");
+                console.log("URL:", url);
+                
+                const responseData = await fetch(url, { cache: 'no-store' });
+                const data = await responseData.json();
+                
+                console.log("Debug: Raw API response:", data);
+                
+                if (data && data.feeds && data.feeds.length > 0) {
+                    const feed = data.feeds[0];
+                    console.log("Debug: Latest feed:", feed);
+                    console.log(`Debug: Field6 value: ${feed.field6}`);
+                    
+                    // Manually update actuator display
+                    if (actuatorIndicator && feed.field6) {
+                        const value = parseFloat(feed.field6);
+                        if (!isNaN(value)) {
+                            console.log("Debug: Manually updating actuator status:", value);
+                            updateActuatorStatus("jalsar_actuator", value);
+                        }
+                    }
+                }
+                
+                // Force a regular update as well
+                await updateAllData();
+                
+                console.log("==== DEBUG UPDATE COMPLETED ====");
+            } catch (error) {
+                console.error("Debug update error:", error);
+            }
+        }        // Load Google Charts and set up the time series chart
+        google.charts.load('current', {'packages':['corechart']});
+        google.charts.setOnLoadCallback(initializeChart);
+        
+        let chart;
+        let chartData;
+          function initializeChart() {
+            chartData = new google.visualization.DataTable();
+            chartData.addColumn('datetime', 'Time');
+            chartData.addColumn('number', 'Water Level (cm)');
+            chartData.addColumn({type: 'string', role: 'tooltip'});
+            
+            // Get warning and danger levels from sensor config
+            const warningLevel = sensorChannels.jalsar_oht.limits.warning;
+            const dangerLevel = sensorChannels.jalsar_oht.limits.danger;
+            
+            // Set chart options
+            const chartOptions = {
+                title: 'Water Level History (Last 24 Hours)',
+                titleTextStyle: { 
+                    color: '#333',
+                    fontSize: 16,
+                    bold: true
+                },
+                legend: { position: 'none' },
+                hAxis: {
+                    title: 'Time',
+                    format: 'HH:mm',
+                    gridlines: { count: 12 }
+                },
+                vAxis: {
+                    title: 'Water Level (cm)',
+                    minValue: 0,
+                    ticks: [0, dangerLevel, warningLevel, warningLevel + 50, warningLevel + 100]
+                },
+                colors: ['#007bff'],
+                lineWidth: 3,
+                pointSize: 5,
+                animation: {
+                    startup: true,
+                    duration: 1000,
+                    easing: 'out'
+                },
+                // Add threshold lines for warning and danger levels
+                series: {
+                    0: { color: '#007bff' }
+                },
+                // Add colored threshold backgrounds
+                intervals: { 
+                    style: 'area' 
+                },
+                hAxis: {
+                    textPosition: 'out',
+                    gridlines: {
+                        color: '#f0f0f0'
+                    }
+                },
+                vAxis: {
+                    viewWindow: {
+                        min: 0
+                    }
+                }
+            };
+            
+            // Create the chart
+            chart = new google.visualization.LineChart(document.getElementById('level_chart'));
+            
+            // Initially draw with no data
+            chart.draw(chartData, chartOptions);
+            
+            // Fetch historical data
+            fetchHistoricalData();
         }
-
+        
+        async function fetchHistoricalData() {
+            try {
+                const sensorInfo = sensorChannels.jalsar_oht;
+                const endDate = new Date();
+                const startDate = new Date(endDate);
+                startDate.setDate(startDate.getDate() - 1); // 24 hours ago
+                
+                // Format dates for ThingSpeak API
+                const startStr = `${startDate.getFullYear()}-${(startDate.getMonth()+1).toString().padStart(2, '0')}-${startDate.getDate().toString().padStart(2, '0')}%20${startDate.getHours().toString().padStart(2, '0')}:${startDate.getMinutes().toString().padStart(2, '0')}:${startDate.getSeconds().toString().padStart(2, '0')}`;
+                const endStr = `${endDate.getFullYear()}-${(endDate.getMonth()+1).toString().padStart(2, '0')}-${endDate.getDate().toString().padStart(2, '0')}%20${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}:${endDate.getSeconds().toString().padStart(2, '0')}`;
+                
+                const url = `https://api.thingspeak.com/channels/${sensorInfo.channelID}/fields/${sensorInfo.field.replace('field', '')}.json?api_key=${sensorInfo.apiKey}&start=${startStr}&end=${endStr}&results=8000`;
+                
+                console.log("Fetching historical data...");
+                console.log("URL:", url);
+                
+                const response = await fetch(url, { cache: 'no-cache' });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (!data || !data.feeds || data.feeds.length === 0) {
+                    console.warn("No historical data received");
+                    document.getElementById('chart_update_time').innerText = "No historical data available";
+                    return;
+                }
+                
+                console.log(`Received ${data.feeds.length} historical data points`);
+                
+                // Process the data for the chart
+                const rows = [];
+                data.feeds.forEach(feed => {
+                    if (feed[sensorInfo.field]) {
+                        const date = new Date(feed.created_at);
+                        const value = parseFloat(feed[sensorInfo.field]);
+                        
+                        if (!isNaN(value)) {
+                            const formattedDate = new Date(date);
+                            const tooltip = `${formattedDate.toLocaleDateString()} ${formattedDate.toLocaleTimeString()}\nLevel: ${Math.round(value)} cm`;
+                            rows.push([formattedDate, value, tooltip]);
+                        }
+                    }
+                });
+                  // Update the chart
+                chartData.removeRows(0, chartData.getNumberOfRows());
+                chartData.addRows(rows);
+                
+                // Get warning and danger levels from sensor config
+                const warningLevel = sensorChannels.jalsar_oht.limits.warning;
+                const dangerLevel = sensorChannels.jalsar_oht.limits.danger;
+                
+                // Create a DataView to add the threshold bands
+                const view = new google.visualization.DataView(chartData);
+                
+                // Format tooltip
+                const options = {
+                    title: 'Water Level History (Last 24 Hours)',
+                    titleTextStyle: { 
+                        color: '#333',
+                        fontSize: 16,
+                        bold: true
+                    },
+                    legend: { position: 'none' },
+                    hAxis: {
+                        title: 'Time',
+                        format: 'HH:mm',
+                        gridlines: { count: 12 }
+                    },
+                    vAxis: {
+                        title: 'Water Level (cm)',
+                        minValue: 0,
+                        ticks: [0, dangerLevel, warningLevel, warningLevel + 50, warningLevel + 100]
+                    },
+                    colors: ['#007bff'],
+                    lineWidth: 3,
+                    pointSize: 5,
+                    animation: {
+                        duration: 1000,
+                        easing: 'out'
+                    },
+                    // Add reference lines for thresholds
+                    series: {
+                        0: { color: '#007bff' }
+                    },
+                    // Add horizontal threshold lines
+                    hAxis: {
+                        textPosition: 'out',
+                        gridlines: {
+                            color: '#f0f0f0'
+                        }
+                    },
+                    // Add reference lines for thresholds
+                    annotations: {
+                        style: 'line',
+                        stem: {
+                            color: 'transparent',
+                            length: 0
+                        }
+                    }
+                };
+                
+                // Add reference lines for warning and danger levels
+                options.annotations = {
+                    dangerLine: {
+                        style: 'line',
+                        line: {
+                            color: 'red',
+                            opacity: 0.5,
+                            width: 2
+                        },
+                        domain: {
+                            stem: {
+                                color: 'transparent',
+                                length: 0
+                            }
+                        }
+                    },
+                    warningLine: {
+                        style: 'line',
+                        line: {
+                            color: 'orange',
+                            opacity: 0.5,
+                            width: 2
+                        },
+                        domain: {
+                            stem: {
+                                color: 'transparent',
+                                length: 0
+                            }
+                        }
+                    }
+                };
+                
+                // Update the chart
+                chart.draw(chartData, options);
+                
+                // Update the timestamp
+                document.getElementById('chart_update_time').innerText = 
+                    `Chart updated: ${new Date().toLocaleTimeString()} • ${rows.length} data points`;
+                    
+            } catch (error) {
+                console.error("Error fetching historical data:", error);
+                document.getElementById('chart_update_time').innerText = 
+                    `Error loading chart data: ${error.message}`;
+            }
+        }
+        
         // Initial update and set interval for periodic updates
         updateAllData();
-        setInterval(updateAllData, 10000); // Update every 10 seconds
+        setInterval(updateAllData, 1000); // Update every 1 seconds
+        
+    
+        setInterval(fetchHistoricalData, 60000);
     </script>
 </body>
 </html>
