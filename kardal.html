@@ -438,7 +438,11 @@
                     }
                     
                     let value = parseFloat(rawValue);
+                    
                     if (!isNaN(value)) {
+                        if (sensorChannels[entityId] !== undefined) {
+                            value = value / 2;
+                        }
                         lastValidValue = value;
                         lastUpdated = feeds[i].created_at;
                         console.log(`${entityId} - Found valid value: ${value} at ${lastUpdated}`);
@@ -697,9 +701,10 @@
                 data.feeds.forEach(feed => {
                     if (feed[sensorInfo.field]) {
                         const date = new Date(feed.created_at);
-                        const value = parseFloat(feed[sensorInfo.field]);
+                        let value = parseFloat(feed[sensorInfo.field]);
                         
                         if (!isNaN(value)) {
+                            value = value / 2;
                             const formattedDate = new Date(date);
                             const tooltip = `${formattedDate.toLocaleDateString()} ${formattedDate.toLocaleTimeString()}\nLevel: ${Math.round(value)} cm`;
                             rows.push([formattedDate, value, tooltip]);
